@@ -1,0 +1,43 @@
+# Usar a imagem oficial do Python 3.10
+FROM python:3.10-slim
+
+# Instalar dependências do sistema necessárias para o ODBC e o driver do SQL Server
+RUN apt-get update \
+    && apt-get install -y \
+    curl \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    python3-dev \
+    unixodbc \
+    unixodbc-dev \
+    libgssapi-krb5-2 \
+    gnupg \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools \
+    && apt-get install -y libodbc1 odbcinst \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar o Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Adicionar o Poetry ao PATH
+ENV PATH="/root/.local/bin:$PATH"
+
+# Adicionar o diretório do sqlcmd ao PATH
+ENV PATH="$PATH:/opt/mssql-tools/bin"
+
+# Definir o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copiar os arquivos relevantes para o container
+COPY . .
+
+# Instalar as dependências do projeto usando o Poetry
+RUN poetry install --no-root
+
+# Definir o ENTRYPOINT para rodar o Flask com o Poetry
+ENTRYPOINT ["poetry", "run", "streamlit", "run", "./virtualassistant/main.py"]

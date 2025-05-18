@@ -1,0 +1,9 @@
+services:
+  virt-assist:
+    build:
+      context: .
+      dockerfile: DockerFile
+    image: virtual-assist:latest
+    container_name: langchain-container
+    ports:
+      - "8501:8501"
